@@ -11,6 +11,7 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
@@ -103,6 +104,7 @@ class AssistantService : AccessibilityService() {
         const val DEFAULT_TEMPERATURE = 0.5
         const val PROCESSING_WATCHDOG_MS = 120_000L
         val SPINNER_FRAMES = arrayOf("◐", "◓", "◑", "◒")
+        const val TAG = "SwiftSlateDiag"
     }
 
     override fun onServiceConnected() {
@@ -111,6 +113,53 @@ class AssistantService : AccessibilityService() {
         commandManager = CommandManager(applicationContext)
         statsManager = StatsManager(applicationContext)
         updateTriggers()
+        startWindowDump()
+    }
+
+    private var dumpRunnable: Runnable? = null
+
+    private fun startWindowDump() {
+        dumpRunnable?.let { handler.removeCallbacks(it) }
+        val runnable = object : Runnable {
+            override fun run() {
+                dumpActiveWindow()
+                handler.postDelayed(this, 3000)
+            }
+        }
+        dumpRunnable = runnable
+        handler.postDelayed(runnable, 1500)
+    }
+
+    private fun dumpActiveWindow() {
+        try {
+            val root = rootInActiveWindow ?: run {
+                Log.e(TAG, "dump: rootInActiveWindow null")
+                return
+            }
+            val pkg = root.packageName?.toString() ?: "?"
+            Log.e(TAG, "== dump window pkg=$pkg winId=${root.windowId} rootCls=${root.className}")
+            if (pkg == "com.tencent.mm") {
+                dumpNode(root, 0)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "dump failed: ${e.message}")
+        }
+    }
+
+    private fun dumpNode(node: AccessibilityNodeInfo, depth: Int) {
+        try {
+            val cls = node.className?.toString() ?: "?"
+            val isEdit = cls.contains("EditText") || node.isEditable
+            if (isEdit || node.isFocused || depth < 2) {
+                Log.e(TAG, "node[$depth] cls=$cls editable=${node.isEditable} imp=${node.isImportantForAccessibility} foc=${node.isFocused} text=${node.text} id=${node.viewIdResourceName}")
+            }
+            for (i in 0 until node.childCount) {
+                try {
+                    val child = node.getChild(i) ?: continue
+                    dumpNode(child, depth + 1)
+                } catch (_: Exception) {}
+            }
+        } catch (_: Exception) {}
     }
 
     private fun updateTriggers() {
@@ -171,19 +220,26 @@ class AssistantService : AccessibilityService() {
 
     private fun handleAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED) return
+        Log.e(TAG, "TEXT_CHANGED pkg=${event.packageName} srcNull=${event.source == null}")
         if (event.packageName?.toString() == packageName) return
         if (!::keyManager.isInitialized) return
 
         if (isProcessing.get()) return
-        val source = event.source ?: return
+        val source = event.source ?: findFocusedEditableSource() ?: run {
+            Log.e(TAG, "source null, abort")
+            return
+        }
         if (source.isPassword) {
+            Log.e(TAG, "password field, skip")
             source.safeRecycle()
             return
         }
         val text = source.text?.toString() ?: run {
+            Log.e(TAG, "text is NULL (wechat fake/clear info?), class=${source.className}")
             source.safeRecycle()
             return
         }
+        Log.e(TAG, "text=[$text] class=${source.className} editable=${source.isEditable}")
         if (text.isEmpty()) {
             verifyRunnable?.let { handler.removeCallbacks(it) }
             lastReplacedText = null
@@ -210,13 +266,16 @@ class AssistantService : AccessibilityService() {
 
         val lastChar = text[text.length - 1]
         if (!triggerLastChars.contains(lastChar)) {
+            Log.e(TAG, "lastChar=[$lastChar] not in triggers=$triggerLastChars")
             if (!lastChar.isLetterOrDigit() || !text.contains(cachedTranslatePrefix)) {
                 source.safeRecycle()
                 return
             }
         }
 
-        val command = commandManager.findCommand(text) ?: run {
+        val command = commandManager.findCommand(text)
+        Log.e(TAG, "findCommand result=${command?.trigger}")
+        if (command == null) {
             source.safeRecycle()
             return
         }
@@ -307,6 +366,38 @@ class AssistantService : AccessibilityService() {
                 processCommand(source, cleanText, command)
             }
         }
+    }
+
+    /**
+     * Fallback source for apps whose TYPE_VIEW_TEXT_CHANGED events carry a null source (e.g.
+     * custom editors that build their own input pipeline). When the event itself provides no
+     * source node, scan the active window tree for the focused editable node and use that
+     * instead — it is usually the very field the event describes. WebView-based editors are
+     * out of reach: their editable HTML fields are virtual nodes that never surface through
+     * the accessibility child hierarchy, so the search simply fails there.
+     */
+    private fun findFocusedEditableSource(): AccessibilityNodeInfo? {
+        val root = rootInActiveWindow ?: return null
+        return findFocusedEditable(root)
+    }
+
+    private fun findFocusedEditable(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        val edit = runCatching { node.isEditable }.getOrElse { false }
+        if (edit && runCatching { node.isFocused }.getOrElse { false }) return node
+        if (node.childCount == 0) {
+            node.safeRecycle()
+            return null
+        }
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val found = findFocusedEditable(child)
+            if (found != null) {
+                node.safeRecycle()
+                return found
+            }
+        }
+        node.safeRecycle()
+        return null
     }
 
     private fun processCommand(source: AccessibilityNodeInfo, text: String, command: Command) {
@@ -770,11 +861,15 @@ class AssistantService : AccessibilityService() {
         // must not restore or clear it — that destroyed the very clip the command just placed.
         callerOwnsClipboard: Boolean = false
     ): Boolean = withContext(Dispatchers.Main) {
-        if (!source.refresh()) return@withContext false
+        if (!source.refresh()) {
+            Log.e(TAG, "replaceText: refresh failed")
+            return@withContext false
+        }
         val bundle = Bundle()
         bundle.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, newText)
 
         val success = source.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, bundle)
+        Log.e(TAG, "replaceText: ACTION_SET_TEXT=$success text=[$newText]")
 
         if (success) {
             // Verify the text actually persisted — some apps (Firefox, Google Keep)
@@ -782,6 +877,7 @@ class AssistantService : AccessibilityService() {
             delay(100)
             source.refresh()
             val currentText = source.text?.toString()
+            Log.e(TAG, "replaceText: verify after SET_TEXT=[$currentText]")
             if (currentText == newText) {
                 scheduleTextVerification(source, newText)
                 return@withContext true // Text persisted
@@ -813,6 +909,7 @@ class AssistantService : AccessibilityService() {
         source.performAction(AccessibilityNodeInfo.ACTION_SET_SELECTION, selectAllArgs)
 
         val pasted = source.performAction(AccessibilityNodeInfo.ACTION_PASTE)
+        Log.e(TAG, "replaceText: clipboard fallback PASTE=$pasted")
 
         scheduleTextVerification(source, newText)
 

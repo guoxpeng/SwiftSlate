@@ -87,6 +87,14 @@ android {
             versionNameSuffix = "-preview"
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
+            // Component name of the no-op accessibility service that matches WeChat's
+            // anti-accessibility whitelist by class name. Empty on the stable build, so the
+            // WeChat compatibility hint is preview-only.
+            buildConfigField(
+                "String",
+                "WHITELIST_SERVICE",
+                "\"com.dianming.phoneapp.MyAccessibilityService\""
+            )
         }
     }
     compileOptions {

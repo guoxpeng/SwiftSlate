@@ -126,4 +126,9 @@
     <string name="update_available_text">点按以查看最新版本</string>
     <string name="error_input_too_long">文本超出了此模型每分钟的令牌上限。请使用更短的文本重试。</string>
     <string name="note_response_truncated">[注意：回复可能被截断]</string>
+
+    <!-- 设置：无障碍 -->
+    <string name="settings_accessibility_title">无障碍</string>
+    <string name="settings_accessibility_desc">管理 SwiftSlate 的无障碍服务与微信兼容服务。</string>
+    <string name="settings_accessibility_open">打开设置</string>
 </resources>

@@ -15,6 +15,9 @@
     <string name="dashboard_favorite_command">Top Command</string>
     <string name="dashboard_no_data">—</string>
     <string name="dashboard_last_7_days">Last 7 Days</string>
+    <string name="dashboard_wechat_hint_title">WeChat compatibility</string>
+    <string name="dashboard_wechat_hint_body">WeChat blocks text replacement unless the companion compatibility service is also on. Enable it alongside SwiftSlate Assistant.</string>
+    <string name="dashboard_wechat_hint_action">Open Accessibility Settings</string>
 
     <!-- Keys -->
     <string name="keys_title">API Keys</string>
@@ -130,5 +133,10 @@
     <string name="update_channel_desc">Notifies when a new version of SwiftSlate is available</string>
     <string name="update_available_title">SwiftSlate update available</string>
     <string name="update_available_text">Tap to view the latest release</string>
+
+    <!-- Settings: accessibility -->
+    <string name="settings_accessibility_title">Accessibility</string>
+    <string name="settings_accessibility_desc">Manage SwiftSlate\'s accessibility services and WeChat compatibility services.</string>
+    <string name="settings_accessibility_open">Open Settings</string>
 
 </resources>
