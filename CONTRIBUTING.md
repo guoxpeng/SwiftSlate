@@ -74,13 +74,71 @@ ui/*Screen.kt                → Jetpack Compose 界面
 - Compose UI 遵循 `ui/components/` 中现有的组件模式
 - 保持函数聚焦、短小
 
+## 微信适配分支（cn-zh）提交流程
+
+本 fork 在 upstream 之上额外维护微信适配与中文文档，默认分支是 `cn-zh`。涉及微信适配的改动按下面的流程走。
+
+### 分支结构
+
+| 分支 | 说明 |
+|:-----|:-----|
+| `cn-zh` | **本 fork 默认分支**，基于 upstream v1.0.76，含微信适配（preview）与中文文档 |
+| `master` | 早期微信适配实验（v1.0.73 时期），已由 `cn-zh` 取代 |
+| `Musheer360/SwiftSlate:master` | 上游主线 |
+
+### 微信适配改动只落在 preview
+
+伪装白名单服务**仅存在于 `app/src/preview/`**，稳定版不含：
+
+- `app/src/preview/AndroidManifest.xml` —— 注册两个 no-op 服务
+- `app/src/preview/java/com/google/android/accessibility/selecttospeak/SelectToSpeakService.kt`
+- `app/src/preview/java/com/dianming/phoneapp/MyAccessibilityService.kt`
+- `app/src/preview/res/xml/fake_accessibility_service_config.xml`
+- `app/src/preview/res/values/strings.xml`
+
+必须遵守的规则：
+
+- **R8 不能重命名这两个伪装服务类**（类名本身就是匹配依据），`app/proguard-rules.pro` 里的 `-keep` 规则必须保留
+- `WHITELIST_SERVICE` BuildConfig 字段定义在 `defaultConfig`（空串），`preview` 覆盖为 `com.dianming.phoneapp.MyAccessibilityService` —— 保证稳定版也能编译
+- `Log.e` 承载 `SwiftSlateDiag` 诊断日志，proguard 只剥离 v/d/i/w，**不要**把 `e` 加回 `-assumenosideeffects`
+
+### 构建与真机验证
+
+```bash
+# 构建 preview APK
+./gradlew assemblePreview
+adb install -r app/build/outputs/apk/preview/app-preview.apk
+
+# 启用「微信适配」伪装服务 + 主服务（方案 2：点名类名）
+adb shell settings put secure enabled_accessibility_services \
+  "com.musheer360.swiftslate.preview/com.musheer360.swiftslate.service.AssistantService:\
+com.musheer360.swiftslate.preview/com.dianming.phoneapp.MyAccessibilityService"
+
+# 看诊断日志
+adb logcat -d -v time -s SwiftSlateDiag:E
+```
+
+成功标志：微信内出现 `TEXT_CHANGED pkg=com.tencent.mm`、`srcNull=false`、`text=[...]` 可读、`findCommand` 非空、`ACTION_SET_TEXT=true` 且 verify 通过。完整测试流程见 [WECHAT_COMPAT.md](WECHAT_COMPAT.md)。
+
+### 微信适配改动的提交与 PR
+
+1. 基于 `cn-zh` 建分支：`git checkout -b wechat/你的改动 cn-zh`
+2. 微信适配改动只进 `preview`；通用修复（如 `srcNull` 兜底、崩溃加固）优先提给上游
+3. 真机验证通过后：`git push fork wechat/你的改动`
+4. 微信适配改动 → 对本 fork 的 `cn-zh` 开 PR；通用上游修复 → 对 `Musheer360/SwiftSlate:master` 开 PR
+
+### 注意事项
+
+- 伪装服务借用了 Google 与点名的类名，属**本地自用规避手段**，不要提交到 upstream 稳定版或公开 Play 渠道（见 WECHAT_COMPAT.md 第 6 节）
+- 微信升级后需重新核验白名单条目（硬编码在微信 `AccExptServiceKt` 的 clinit 中）
+
 ## 提交 PR
 
-1. Fork 并创建分支：`feature/your-thing` 或 `fix/the-bug`
+1. Fork 并创建分支：`feature/your-thing` 或 `fix/the-bug`（微信适配相关用 `wechat/xxx`，见上一节）
 2. 做出修改
 3. 在真机上开启无障碍服务测试
 4. 运行 `./gradlew assembleDebug` —— 必须干净构建通过
-5. 针对 `master` 提交 PR —— 填写模板
+5. 通用改动针对上游 `master` 提交 PR，微信适配改动针对本 fork 的 `cn-zh` 提交 PR —— 填写模板
 
 ## 我不会合并的内容
 
