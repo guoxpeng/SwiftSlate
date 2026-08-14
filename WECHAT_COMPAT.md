@@ -1,175 +1,122 @@
-# SwiftSlate: WeChat (com.tencent.mm) Compatibility Patch
+# SwiftSlate：微信（com.tencent.mm）兼容补丁
 
-**Audience:** upstream SwiftSlate maintainers (and anyone who wants to integrate WeChat
-support). This document explains *why* WeChat breaks SwiftSlate, the minimal fix we
-applied, every file it touches, and how to adopt it upstream.
+**读者对象：** 本项目维护者（及任何想集成微信支持的人）。本文档解释微信为什么会破坏 SwiftSlate、我们采用的最小修复方案、涉及的每个文件，以及如何在上游采用。
 
-> Scope: the patch is currently bundled in the `preview` build type only, so it does not
-> affect the stable release. We recommend adopting the same structure (see
-> "Integration for upstream" below).
+> 适用范围：补丁目前只打包在 `preview` 构建类型中，不影响稳定版。建议上游采用相同的结构（见"上游集成建议"）。
 >
-> Version: this document tracks the **v1.0.76** codebase (upstream `master` at `cabd098`).
-> Upstream has since adopted the `srcNull` fallback itself (#125), so the fork now only
-> adds: the preview whitelist-name services, the recursive editable-node search refinement,
-> the `SwiftSlateDiag` `Log.e` diagnostics, and the UI hints (see §3).
+> 版本：本文档对应 **v1.0.76** 代码库（upstream `master` 的 `cabd098`）。上游已在 #125 中自行采纳 `srcNull` 兜底，本分支现在只额外提供：preview 伪装白名单服务、递归 editable 节点搜索、`SwiftSlateDiag` `Log.e` 诊断、UI 提示（见 §3）。
 
 ---
 
-## 1. The problem: WeChat actively sabotages accessibility services
+## 1. 问题：微信主动对抗无障碍服务
 
-WeChat 8.0.74 (versionCode 3120, and presumably all current versions) contains an
-**anti-accessibility defense** that detects non-whitelisted accessibility services and
-then **wipes (or fakes) the accessibility node tree of the active window**. The visible
-symptoms:
+微信 8.0.74（versionCode 3120，可推断所有当前版本）内置**反无障碍防御机制**：检测到非白名单的无障碍服务后，会**清空（或伪造）当前活动窗口的无障碍节点树**。可见症状：
 
-- `rootInActiveWindow` returns a tree whose nodes are empty (`rootCls` reports the real
-  class only for the root; child `EditText` nodes vanish).
-- `TYPE_VIEW_TEXT_CHANGED` events for the chat input either never arrive, or arrive with
-  an empty/`null` source.
-- SwiftSlate cannot read the text, so `?fix` / `?translate` never trigger.
+- `rootInActiveWindow` 返回的树里节点是空的（`rootCls` 只对根节点报真实类名，子 `EditText` 节点全部消失）。
+- 聊天输入框的 `TYPE_VIEW_TEXT_CHANGED` 事件要么根本不来，要么 source 为空/残缺。
+- SwiftSlate 读不到文本，`?fix` / `?translate` 永远无法触发。
 
-This is **not** FLAG_SECURE: the WeChat window does not set it (verified with
-`dumpsys window`). The empty tree is produced in software, in WeChat's accessibility
-bridge.
+这**不是** FLAG_SECURE：微信窗口并未设置该标志（已用 `dumpsys window` 核实）。空树是微信无障碍桥接层在软件层面主动产生的。
 
-### Reverse-engineered mechanics (verified against smali)
+### 逆向确认的机制（对照 smali 验证）
 
-| Piece | Location (smali) | Behaviour |
+| 环节 | 位置（smali） | 行为 |
 |---|---|---|
-| Master switch | `AccUtil.smali` — `isAccessibilityEnabled()` | Returns `true` (→ no attack) if **any** of: monkey env, TalkBack touch-explore enabled, a whitelist service is enabled, or the account is server-whitelisted. Otherwise returns `false` → the attack arms. |
-| Whitelist match | `AccExptService.smali` — `checkHasServiceInList()` | Reads `Settings.Secure.enabled_accessibility_services` and checks each enabled service string `package/name` with a **`CharSequence.contains()`** against each whitelist entry. |
-| Whitelist entries | `AccExptServiceKt.smali` (clinit) | Exactly two, hard-coded: `com.google.android.accessibility.selecttospeak.SelectToSpeakService` and `com.dianming.phoneapp.MyAccessibilityService`. |
-| Tree wiping | `base/MapExpandKt.smali` — `clearInfo()`/`toFakeInfo()`; entry `MMAccessibilityDelegateWrap.smali:340` `onInitializeAccessibilityNodeInfo()` | When armed, `needClearNodeInfo()` makes the delegate return without populating the node → empty tree. `needUseFakeInfo()` fabricates dummy text. |
-| Server config | `q15/a.smali` + `AccConfigManager.smali` | Fields like `accinfo_clear_strike`, `accinfo_random_strike`, `intercept_stack`; cached in MMKV, expired periodically. |
+| 总开关 | `AccUtil.smali` — `isAccessibilityEnabled()` | 以下**任一**命中返回 `true`（→ 不攻击）：monkey 环境、TalkBack 触摸浏览开启、白名单服务已启用、账号被服务端白名单。否则返回 `false` → 攻击激活。 |
+| 白名单匹配 | `AccExptService.smali` — `checkHasServiceInList()` | 读取 `Settings.Secure.enabled_accessibility_services`，对每个已启用服务的 `package/name` 字符串与每条白名单项做 **`CharSequence.contains()`** 匹配。 |
+| 白名单条目 | `AccExptServiceKt.smali`（clinit） | 恰好两条、硬编码：`com.google.android.accessibility.selecttospeak.SelectToSpeakService` 和 `com.dianming.phoneapp.MyAccessibilityService`。 |
+| 清空节点树 | `base/MapExpandKt.smali` — `clearInfo()`/`toFakeInfo()`；入口 `MMAccessibilityDelegateWrap.smali:340` `onInitializeAccessibilityNodeInfo()` | 激活时 `needClearNodeInfo()` 让 delegate 直接返回、不填充节点 → 空树。`needUseFakeInfo()` 伪造虚假文本。 |
+| 服务端配置 | `q15/a.smali` + `AccConfigManager.smali` | 字段如 `accinfo_clear_strike`、`accinfo_random_strike`、`intercept_stack`；缓存在 MMKV，定期过期。 |
 
-**The key insight:** the whitelist match is a **string `contains()` on the service's
-`package/name`** against two hard-coded class names. WeChat does not verify that the
-class actually *belongs* to Google or to Dianming — it only checks the string.
+**关键洞察：** 白名单匹配是对服务 `package/name` 字符串做 `contains()` 匹配，目标只有两条硬编码类名。微信并不验证类是否真的属于 Google 或点名 —— 只检查字符串。
 
 ---
 
-## 2. The fix: a no-op service whose class name *is* a whitelist entry
+## 2. 修复方案：类名*就是*白名单条目的 no-op 服务
 
-Because the match is `package/name` **contains** a whitelisted FQCN, SwiftSlate can
-declare an accessibility service with a class name exactly equal to one of the two
-whitelist entries. WeChat then sees a "whitelisted" service enabled, `isAccessibilityEnabled()`
-returns `true`, and the tree-wiping attack is never armed. The service itself does
-nothing.
+因为匹配是 `package/name` **包含**白名单 FQCN，SwiftSlate 可以声明一个类名完全等于白名单条目之一的无障碍服务。微信看到"白名单服务已启用"，`isAccessibilityEnabled()` 返回 `true`，清空节点树的攻击就永远不会激活。该服务本身什么都不做。
 
-Two such services are declared (one per whitelist entry, for redundancy — if WeChat
-rotates one entry, the other still matches):
+声明了两个这样的服务（每条白名单一项一个，互为冗余 —— 微信若轮换其中一条，另一条仍能命中）：
 
 - `com.google.android.accessibility.selecttospeak.SelectToSpeakService`
 - `com.dianming.phoneapp.MyAccessibilityService`
 
-Both are no-ops (`onAccessibilityEvent`/`onInterrupt` empty). They exist **only** in the
-`preview` source set, never in the stable build.
+两个都是 no-op（`onAccessibilityEvent`/`onInterrupt` 为空）。它们**只**存在于 `preview` 源码集，稳定版中不存在。
 
-**Verified on device (Realme RMX2202, Android 14, no root):** after enabling the
-compatibility service together with SwiftSlate's main service, WeChat's `rootCls`
-reports `android.widget.FrameLayout` again, `TEXT_CHANGED` events fire with a real
-source, text is readable, and `?fix` replacement works end-to-end. Requires **no root**
-— it relies only on the standard accessibility-settings toggles.
+**真机验证（Realme RMX2202，Android 14，无 root）：** 启用兼容服务 + SwiftSlate 主服务后，微信 `rootCls` 重新报告 `android.widget.FrameLayout`，`TEXT_CHANGED` 事件带真实 source 正常到达，文本可读，`?fix` 替换端到端成功。**不需要 root** —— 只依赖标准的无障碍设置开关。
 
 ---
 
-## 3. File-by-file change list
+## 3. 逐文件改动清单
 
-### New files (preview-only)
+### 新增文件（仅 preview）
 
-| File | Purpose |
+| 文件 | 用途 |
 |---|---|
-| `app/src/preview/AndroidManifest.xml` | Registers the two no-op compatibility services (label, `BIND_ACCESSIBILITY_SERVICE` permission, standard a11y meta-data). |
-| `app/src/preview/java/com/google/android/accessibility/selecttospeak/SelectToSpeakService.kt` | No-op `AccessibilityService`; class name matches whitelist entry #1. |
-| `app/src/preview/java/com/dianming/phoneapp/MyAccessibilityService.kt` | No-op `AccessibilityService`; class name matches whitelist entry #2. |
+| `app/src/preview/AndroidManifest.xml` | 注册两个 no-op 兼容服务（label、`BIND_ACCESSIBILITY_SERVICE` 权限、标准 a11y meta-data）。 |
+| `app/src/preview/java/com/google/android/accessibility/selecttospeak/SelectToSpeakService.kt` | no-op `AccessibilityService`；类名匹配白名单第 1 条。 |
+| `app/src/preview/java/com/dianming/phoneapp/MyAccessibilityService.kt` | no-op `AccessibilityService`；类名匹配白名单第 2 条。 |
 
-### Modified files
+### 修改的文件
 
-| File | Change |
+| 文件 | 改动 |
 |---|---|
-| `app/build.gradle.kts` | `buildConfigField("String", "WHITELIST_SERVICE", ...)`: declared **empty in `defaultConfig`** (so stable builds compile — the field is referenced from main source) and overridden in the `preview` buildType with `"com.dianming.phoneapp.MyAccessibilityService"`. Used by the Dashboard hint so the UI can tell whether the compat service is enabled. |
-| `app/proguard-rules.pro` | `-keep` both no-op service classes' `<init>()` — **R8 must not rename them**, the FQCN *is* the feature. (Class names must survive minification exactly.) Also keeps `Log.e` (it carries `SwiftSlateDiag` diagnostics; `-assumenosideeffects` only strips v/d/i/w). |
-| `gradle.properties` | Fork release pin: `versionName=1.0.76`, `versionCode=227` (overridable with `-PversionName`/`-PversionCode`). |
-| `app/src/preview/res/values/strings.xml` | Labels for the two services (`SwiftSlate 微信适配` / `SwiftSlate 微信适配（备选）`). |
-| `app/src/main/java/.../service/AssistantService.kt` | **(a)** `srcNull` fallback refinement: upstream's #125 fallback used `root.findFocus(FOCUS_INPUT)`, which returns the WebView/container node (not editable) for WebView-based editors. The fork walks the tree for a node that is both **editable and focused** (`findFocusedEditableSource` / `findFocusedEditable`), keeping upstream's throttling + crash hardening. **(b)** Diagnostic `Log.e` output (`SwiftSlateDiag`) on the event pipeline and `replaceText`. **(c)** A `startWindowDump()` debug dump-loop, **disabled** (commented call) — it pokes WeChat's delegate every 3s and made the IME candidate bar jump. |
-| `app/src/main/java/.../ui/DashboardScreen.kt` | WeChat-compat hint card: when the main service is on but the whitelist service is off, show a prompt that both must be enabled (preview builds only; guarded by `BuildConfig.WHITELIST_SERVICE` being non-empty). |
-| `app/src/main/java/.../ui/SettingsScreen.kt` | A permanent "Accessibility" entry row (opens `Settings.ACTION_ACCESSIBILITY_SETTINGS`) placed inside the Backup card so it does not disturb the fixed-height layout of the About card. |
-| `app/src/main/res/values/strings.xml` (+ `values-zh`, `values-zh-rCN`) | New strings: accessibility entry (`settings_accessibility_*`) and Dashboard hint (`dashboard_wechat_hint_*`). |
+| `app/build.gradle.kts` | `buildConfigField("String", "WHITELIST_SERVICE", ...)`：在 **`defaultConfig` 中定义为空串**（这样稳定版也能编译 —— 该字段被主源码引用），并在 `preview` buildType 中覆盖为 `"com.dianming.phoneapp.MyAccessibilityService"`。Dashboard 提示据此判断兼容服务是否已启用。 |
+| `app/proguard-rules.pro` | `-keep` 两个 no-op 服务类的 `<init>()` —— **R8 绝不能重命名它们**，FQCN 本身就是功能。（类名必须原样通过混淆。）同时保留 `Log.e`（承载 `SwiftSlateDiag` 诊断；`-assumenosideeffects` 只剥离 v/d/i/w）。 |
+| `gradle.properties` | fork 发布固定版本：`versionName=1.0.76`、`versionCode=227`（可用 `-PversionName`/`-PversionCode` 覆盖）。 |
+| `app/src/preview/res/values/strings.xml` | 两个服务的显示名（`SwiftSlate 微信适配` / `SwiftSlate 微信适配（备选）`）。 |
+| `app/src/main/java/.../service/AssistantService.kt` | **(a)** `srcNull` 兜底改进：上游 #125 的兜底用 `root.findFocus(FOCUS_INPUT)`，对 WebView 类编辑器会返回 WebView 容器节点（不可编辑）。本分支改为遍历整棵树寻找**同时满足 editable 且 focused** 的节点（`findFocusedEditableSource` / `findFocusedEditable`），保留上游的节流与崩溃加固。**(b)** 事件链路和 `replaceText` 上的 `Log.e` 诊断输出（`SwiftSlateDiag`）。**(c)** `startWindowDump()` 调试用 dump 循环，**默认禁用**（调用被注释）—— 每 3 秒戳一次微信 delegate 会让 IME 候选栏跳动。 |
+| `app/src/main/java/.../ui/DashboardScreen.kt` | 微信兼容提示卡片：主服务开启但白名单服务关闭时，提示两者必须同时启用（仅 preview 构建；由 `BuildConfig.WHITELIST_SERVICE` 非空控制）。 |
+| `app/src/main/java/.../ui/SettingsScreen.kt` | 永久"无障碍"入口行（打开 `Settings.ACTION_ACCESSIBILITY_SETTINGS`），放在备份卡片内，以免挤压 About 卡片的固定高度布局。 |
+| `app/src/main/res/values/strings.xml`（+ `values-zh`、`values-zh-rCN`） | 新增字符串：无障碍入口（`settings_accessibility_*`）和 Dashboard 提示（`dashboard_wechat_hint_*`）。 |
 
 ---
 
-## 4. The srcNull fallback (a genuinely useful side-fix)
+## 4. srcNull 兜底（一个真正有用的附带修复）
 
-While diagnosing, we found that some apps emit `TYPE_VIEW_TEXT_CHANGED` with
-`event.source == null` (custom input pipelines, WebViews, etc.). Previously SwiftSlate
-aborted on those. **Upstream already adopted this fix in #125** (v1.0.76); the fork only
-refines it: upstream's version calls `root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)`,
-which for WebView-based editors returns the WebView *container* (not editable). The fork
-walks the tree for a node that is both **editable and focused** instead:
-when the event carries no source, walk `rootInActiveWindow` and pick the focused editable
-node.
+诊断过程中我们发现，部分 App 会发出 `event.source == null` 的 `TYPE_VIEW_TEXT_CHANGED` 事件（自定义输入管线、WebView 等）。此前 SwiftSlate 遇到就直接放弃。**上游已在 #125 采纳该修复**（v1.0.76）；本分支只做了改进：上游版本调用 `root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)`，对 WebView 类编辑器会返回 WebView *容器*（不可编辑）。本分支改为遍历整棵树找**同时 editable 且 focused** 的节点：当事件不带 source 时，遍历 `rootInActiveWindow` 找聚焦的可编辑节点。
 
-- **Works for:** native `EditText` fields that simply don't carry a source in their event.
-- **Does not work for:** WebView rich-text editors (e.g. ColorOS Notes). Their editable
-  HTML fields are *virtual* nodes never exposed through the accessibility child hierarchy
-  (`childCount` is 1 but `getChild(0)` returns null). This is a WebView accessibility
-  limitation, not a SwiftSlate bug.
+- **适用：** 原生 `EditText` 但事件不带 source 的 App（兜底有效）。
+- **不适用：** WebView 富文本编辑器（如 ColorOS 便签）。其可编辑 HTML 字段是*虚拟*节点，从不通过无障碍子节点层级暴露（`childCount` 为 1 但 `getChild(0)` 返回 null）。这是 WebView 无障碍的固有限制，不是 SwiftSlate 的 bug。
 
 ---
 
-## 5. Integration for upstream (recommended)
+## 5. 上游集成建议
 
-We kept the patch isolated to `preview` so the stable build is untouched. For upstream we
-suggest the same pattern, possibly with a real feature flag:
+补丁被隔离在 `preview` 里，稳定版不受影响。建议上游采用同样模式，也可以用真正的功能开关：
 
-1. **Keep the two no-op services in a dedicated source set / optional build type** so
-   stable builds don't ship classes named after Google/Dianming (see "Ethical / Play
-   considerations").
-2. **Keep the `-keep` rules** with the exact class names — renaming silently breaks the
-   feature.
-3. **Keep the `srcNull` fallback** in `AssistantService` unconditionally: it is a pure
-   improvement for native EditText apps, independent of WeChat.
-4. **Make the Dashboard hint conditional** on the compat service actually being compiled in
-   (as done via `BuildConfig.WHITELIST_SERVICE`).
-5. **Re-verify the whitelist entries** on new WeChat releases. The two names are hard-coded
-   in WeChat's `AccExptServiceKt` clinit; if WeChat adds/removes entries, add/remove matching
-   no-op classes.
+1. **把两个 no-op 服务放在独立的源码集/可选构建类型里**，让稳定版不携带以 Google/点名命名的类（见"合规 / Play 商店考量"）。
+2. **保留 `-keep` 规则与精确类名** —— 重命名会静默破坏功能。
+3. **在 `AssistantService` 中无条件保留 `srcNull` 兜底**：对原生 EditText App 是纯粹的改进，与微信无关。
+4. **让 Dashboard 提示仅在编译进兼容服务时显示**（如通过 `BuildConfig.WHITELIST_SERVICE`）。
+5. **在微信新版本上重新验证白名单条目。** 两条名字硬编码在微信 `AccExptServiceKt` 的 clinit 里；微信增删条目时，同步增删对应的 no-op 类。
 
-### Testing checklist
-1. Install and enable SwiftSlate main service + one compat service.
-2. Open WeChat, enter a chat, focus the input.
-3. Confirm `adb logcat -s SwiftSlateDiag:E` shows `rootCls=android.widget.FrameLayout`
-   (not `null`) and `TEXT_CHANGED pkg=com.tencent.mm`.
-4. Type `hello world ?fix` and confirm the replacement lands in the input field.
+### 测试清单
+1. 安装并启用 SwiftSlate 主服务 + 一个兼容服务。
+2. 打开微信，进入聊天，聚焦输入框。
+3. 确认 `adb logcat -s SwiftSlateDiag:E` 显示 `rootCls=android.widget.FrameLayout`（非 `null`）和 `TEXT_CHANGED pkg=com.tencent.mm`。
+4. 输入 `hello world ?fix` 并确认替换落进输入框。
 
 ---
 
-## 6. Ethical / Play Store considerations (please read)
+## 6. 合规 / Play 商店考量（请阅读）
 
-- The no-op services borrow Google's and Dianming's class names purely to satisfy a string
-  comparison in WeChat's client. This is **local, self-use software** — no WeChat server
-  is touched, no data leaves the device differently than usual.
-- Shipping classes named `com.google.android.accessibility.selecttospeak.SelectToSpeakService`
-  in a **public** Play Store build is risky: Play Integrity, WeChat, or OEMs may treat a
-  service that impersonates a Google component as suspicious. **Keep it out of the stable
-  build** (that is exactly why it lives in `preview`).
-- If you want WeChat support in the stable channel without impersonation, the alternatives
-  are: (a) prompt users to enable TalkBack touch-exploration or Google's real
-  Select-to-Speak (both make `isAccessibilityEnabled()` return true), or (b) negotiate
-  with users to keep a preview build. Option (a) needs no code but has UX overhead.
+- no-op 服务借用 Google 和点名的类名，纯粹是为了满足微信客户端里的字符串比较。这是**本地自用软件** —— 不触碰任何微信服务器，数据也不会以异于平常的方式离开设备。
+- 在**公开**的 Play 商店构建中携带名为 `com.google.android.accessibility.selecttospeak.SelectToSpeakService` 的类有风险：Play Integrity、微信或 OEM 可能把"冒充 Google 组件的服务"视为可疑。**请务必排除在稳定版之外**（这正是它放在 `preview` 里的原因）。
+- 如果要在稳定渠道提供微信支持且不做冒充，替代方案：(a) 提示用户开启 TalkBack 触摸浏览或 Google 官方随选朗读（两者都会让 `isAccessibilityEnabled()` 返回 true），或 (b) 与用户协商使用 preview 构建。方案 (a) 不需要代码，但有额外 UX 成本。
 
 ---
 
-## 7. Appendix: quick adb enable/disable
+## 7. 附录：adb 快速启用/停用
 
 ```bash
-# Enable main service + Dianming compat (recommended pair)
+# 启用主服务 + 点名兼容服务（推荐组合）
 adb shell settings put secure enabled_accessibility_services \
   "com.musheer360.swiftslate.preview/com.musheer360.swiftslate.service.AssistantService:\
 com.musheer360.swiftslate.preview/com.dianming.phoneapp.MyAccessibilityService"
 
-# Verify binding
+# 验证绑定
 adb shell dumpsys accessibility | grep "Bound services"
 ```
 
-(On the stable application id, substitute the package name accordingly.)
+（稳定版 applicationId 请相应替换包名。）

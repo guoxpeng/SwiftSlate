@@ -1,39 +1,39 @@
-# Security Policy
+# 安全策略
 
-## Reporting a Vulnerability
+## 报告漏洞
 
-If you discover a security vulnerability in SwiftSlate, please report it privately:
+如果你在 SwiftSlate 中发现安全漏洞，请私下报告：
 
-**Email:** me@musheer360.com
+**邮箱：** me@musheer360.com
 
-**Subject line:** `[SwiftSlate Security] Brief description`
+**主题行：** `[SwiftSlate Security] 简要描述`
 
-Please include:
-- Description of the vulnerability
-- Steps to reproduce
-- Affected component (e.g., `KeyManager`, `AssistantService`, API clients)
-- Potential impact
+请附上：
+- 漏洞描述
+- 复现步骤
+- 受影响组件（如 `KeyManager`、`AssistantService`、API 客户端）
+- 潜在影响
 
-I'll acknowledge your report within 48 hours and provide a fix timeline.
+我会在 48 小时内确认你的报告，并给出修复时间表。
 
-## Scope
+## 范围
 
-Security issues I'm particularly interested in:
+特别关注以下安全问题的报告：
 
-| Area | Examples |
+| 领域 | 示例 |
 |:-----|:--------|
-| **Key storage** | Bypassing AES-256-GCM encryption, extracting keys from SharedPreferences |
-| **Accessibility service** | Unintended text capture outside trigger detection, password field leakage |
-| **API communication** | Man-in-the-middle risks, credential exposure in logs or error messages |
-| **Data handling** | Text persisted when it shouldn't be, backup/export including sensitive data |
+| **密钥存储** | 绕过 AES-256-GCM 加密、从 SharedPreferences 提取密钥 |
+| **无障碍服务** | 触发词检测之外的意外文本捕获、密码框内容泄露 |
+| **API 通信** | 中间人攻击风险、日志或错误消息中的凭据暴露 |
+| **数据处理** | 不应持久化的文本被保存、备份/导出包含敏感数据 |
 
-## Out of Scope
+## 超出范围
 
-- Vulnerabilities in upstream AI providers (Gemini, Groq, etc.)
-- Issues requiring physical device access with USB debugging enabled
-- Social engineering attacks
-- Denial of service against the app itself
+- 上游 AI 提供方（Gemini、Groq 等）的漏洞
+- 需要开启 USB 调试并物理接触设备才能利用的问题
+- 社会工程攻击
+- 针对应用本身的拒绝服务
 
-## Disclosure
+## 披露
 
-Please do **not** open a public GitHub issue for security vulnerabilities. I'll coordinate disclosure with you once a fix is available.
+请**不要**为安全漏洞开启公开的 GitHub issue。修复可用后，我会与你协调披露。
