@@ -107,7 +107,25 @@
 
 ---
 
-## 7. 附录：adb 快速启用/停用
+## 7. 无 root 适配的适用性（其他手机）
+
+**机制本身不需要 root** —— 伪装服务与普通无障碍 App 一样，只依赖「设置 → 无障碍」开关即可启用。但换手机 / 换账号时能否生效取决于三点，**需要逐台实测**：
+
+1. **微信版本** —— 两条白名单类名硬编码在微信 8.0.74（versionCode 3120）客户端的 `AccExptServiceKt` clinit。同版本或名单未变的版本可用；微信更新若轮换名单（或改变匹配逻辑），需重新逆向确认并同步更新伪装服务。
+2. **账号服务端配置** —— 微信按账号下发实验配置（MMKV 缓存）：`clicfg_acc_white_service_list`（服务端可配置白名单）、`accinfo_clear_strike`（清空概率因子）、`accinfo_random_strike`（随机命中因子）。**不同账号可能收到不同配置**，硬编码类名不一定命中；验证时所用账号确实收到了 clear 配置且绕过成功，但其他账号不保证。
+3. **机型 / OEM 限制** —— 部分国产 ROM（小米 HyperOS、一加、三星等）隐藏或限制第三方无障碍服务；Android 13+ 侧载应用需先「应用信息 → ⋮ → 允许受限设置」授权，无障碍开关才能打开。这是操作门槛，不是 root 门槛。
+
+### 通用兜底（方案 3，无 root）
+
+若伪装服务在某台手机 / 某账号下无效，开启系统自带的「随选朗读 / Select to Speak」或 TalkBack 触摸浏览即可 —— 真实的 Google 随选朗读服务名本身就在微信白名单里，能让 `isAccessibilityEnabled()` 返回 true，无需安装任何东西。注意国行 ROM 不一定自带该组件（测试机 Realme 的 TalkBack 内带有）。
+
+### 在其他手机上的验证步骤
+
+1. 安装本分支 Release 的 `app-preview.apk`
+2. 设置 → 无障碍 → 同时启用「SwiftSlate 助手」与「SwiftSlate 微信适配」
+3. 微信聊天框输入 `hello world ，fix`，或连 adb 看 `adb logcat -s SwiftSlateDiag:E` 是否出现 `TEXT_CHANGED pkg=com.tencent.mm`、`srcNull=false`、`text=[...]` 可读、`ACTION_SET_TEXT=true`
+
+## 8. 附录：adb 快速启用/停用
 
 ```bash
 # 启用主服务 + 点名兼容服务（推荐组合）
