@@ -1,30 +1,30 @@
-# Code of Conduct
+# 行为准则
 
-## Our Pledge
+## 我们的承诺
 
-We are committed to making participation in this project a harassment-free experience for everyone, regardless of background or experience level.
+我们致力于让每个人都能在本项目中获得无骚扰的体验，无论其背景或经验水平如何。
 
-## Standards
+## 行为标准
 
-**Expected behavior:**
-- Being respectful and constructive in discussions
-- Providing and gracefully accepting feedback
-- Focusing on what's best for the project and its users
+**期望的行为：**
+- 在讨论中保持尊重与建设性
+- 提供并优雅地接受反馈
+- 以项目和用户的利益为重
 
-**Unacceptable behavior:**
-- Harassment, insults, or personal attacks
-- Spam or off-topic content
-- Publishing others' private information without consent
-- Any conduct that creates a hostile environment
+**不可接受的行为：**
+- 骚扰、侮辱或人身攻击
+- 垃圾信息或与主题无关的内容
+- 未经同意公开他人隐私信息
+- 任何营造敌意环境的行为
 
-## Enforcement
+## 执行
 
-Violations may result in comments being removed, issues being locked, or users being blocked at the maintainer's discretion.
+违规行为可能导致评论被删除、issue 被锁定，或由维护者酌情封禁用户。
 
-## Scope
+## 适用范围
 
-This applies to all project spaces: issues, pull requests, discussions, and comments.
+适用于所有项目空间：issue、Pull Request、讨论和评论。
 
-## Contact
+## 联系方式
 
 me@musheer360.com
