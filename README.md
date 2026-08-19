@@ -70,7 +70,7 @@ preview 构建内置两个 **no-op 伪装白名单服务**，类名精确等于�
 ### 安装启用（3 步）
 
 1. 安装本分支 [Release](https://github.com/guoxpeng/SwiftSlate/releases/latest) 的 `app-preview.apk`（或本地 `./gradlew assemblePreview` 构建）
-2. 设置 → 无障碍 → 同时启用 **「SwiftSlate 助手」** 和 **「SwiftSlate 微信适配」**
+2. 设置 → 无障碍 → 同时启用 **「SwiftSlate 微信版」** 和 **「SwiftSlate 微信适配」**
 3. 打开微信聊天输入框，输入 `hello world ，fix` 试试
 
 ### 验证成功标志（连 adb 时）
@@ -98,7 +98,7 @@ adb logcat -d -v time -s SwiftSlateDiag:E
 ### 三步设置
 
 1. 🔑 **密钥**：打开「密钥」标签页，添加 API 密钥（保存前会实时校验）
-2. ♿ **服务**：仪表盘点「启用」→ 无障碍设置里打开 **SwiftSlate 助手**（微信适配版还需打开 **SwiftSlate 微信适配**）
+2. ♿ **服务**：仪表盘点「启用」→ 无障碍设置里打开 **SwiftSlate 微信版**（微信适配版还需打开 **SwiftSlate 微信适配**）
 3. ✍️ **输入**：任意输入框末尾输入 `?fix` 等触发词
 
 ## 🧩 内置命令

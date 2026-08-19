@@ -64,7 +64,7 @@
 | `app/build.gradle.kts` | `buildConfigField("String", "WHITELIST_SERVICE", ...)`：在 **`defaultConfig` 中定义为空串**（这样稳定版也能编译 —— 该字段被主源码引用），并在 `preview` buildType 中覆盖为 `"com.dianming.phoneapp.MyAccessibilityService"`。Dashboard 提示据此判断兼容服务是否已启用。 |
 | `app/proguard-rules.pro` | `-keep` 两个 no-op 服务类的 `<init>()` —— **R8 绝不能重命名它们**，FQCN 本身就是功能。（类名必须原样通过混淆。）同时保留 `Log.e`（承载 `SwiftSlateDiag` 诊断；`-assumenosideeffects` 只剥离 v/d/i/w）。 |
 | `gradle.properties` | fork 发布固定版本：`versionName=1.0.76`、`versionCode=227`（可用 `-PversionName`/`-PversionCode` 覆盖）。 |
-| `app/src/preview/res/values/strings.xml` | 两个服务的显示名（`SwiftSlate 微信适配` / `SwiftSlate 微信适配（备选）`）。 |
+| `app/src/preview/res/values/strings.xml`（+ `values-zh`、`values-zh-rCN`） | 应用名与无障碍服务名（`app_name` / `accessibility_service_label` = `SwiftSlate 微信版`），以及两个兼容服务的显示名（`SwiftSlate 微信适配` / `SwiftSlate 微信适配（备选）`）。 |
 | `app/src/main/java/.../service/AssistantService.kt` | **(a)** `srcNull` 兜底改进：上游 #125 的兜底用 `root.findFocus(FOCUS_INPUT)`，对 WebView 类编辑器会返回 WebView 容器节点（不可编辑）。本分支改为遍历整棵树寻找**同时满足 editable 且 focused** 的节点（`findFocusedEditableSource` / `findFocusedEditable`），保留上游的节流与崩溃加固。**(b)** 事件链路和 `replaceText` 上的 `Log.e` 诊断输出（`SwiftSlateDiag`）。**(c)** `startWindowDump()` 调试用 dump 循环，**默认禁用**（调用被注释）—— 每 3 秒戳一次微信 delegate 会让 IME 候选栏跳动。 |
 | `app/src/main/java/.../ui/DashboardScreen.kt` | 微信兼容提示卡片：主服务开启但白名单服务关闭时，提示两者必须同时启用（仅 preview 构建；由 `BuildConfig.WHITELIST_SERVICE` 非空控制）。 |
 | `app/src/main/java/.../ui/SettingsScreen.kt` | 永久"无障碍"入口行（打开 `Settings.ACTION_ACCESSIBILITY_SETTINGS`），放在备份卡片内，以免挤压 About 卡片的固定高度布局。 |
@@ -122,7 +122,7 @@
 ### 在其他手机上的验证步骤
 
 1. 安装本分支 Release 的 `app-preview.apk`
-2. 设置 → 无障碍 → 同时启用「SwiftSlate 助手」与「SwiftSlate 微信适配」
+2. 设置 → 无障碍 → 同时启用「SwiftSlate 微信版」与「SwiftSlate 微信适配」
 3. 微信聊天框输入 `hello world ，fix`，或连 adb 看 `adb logcat -s SwiftSlateDiag:E` 是否出现 `TEXT_CHANGED pkg=com.tencent.mm`、`srcNull=false`、`text=[...]` 可读、`ACTION_SET_TEXT=true`
 
 ## 8. 附录：adb 快速启用/停用
