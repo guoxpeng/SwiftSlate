@@ -51,6 +51,23 @@ class ErrorMessagesTest {
         assertEquals(R.string.error_no_model_access, ErrorMessages.map("PERMISSION_DENIED: invalid api key"))
     }
 
+    /**
+     * Google answers a geo/network block with "Access denied. Please check your network
+     * settings." — a region/network problem, not a key/model permission problem. Must win over
+     * the generic permission_denied branch.
+     */
+    @Test
+    fun accessDeniedNetworkMessage_mapsToRegionBlocked() {
+        assertEquals(
+            R.string.error_region_blocked,
+            ErrorMessages.map("Access denied. Please check your network settings.")
+        )
+        assertEquals(
+            R.string.error_region_blocked,
+            ErrorMessages.map("PERMISSION_DENIED: Access denied. Please check your network settings.")
+        )
+    }
+
     @Test
     fun rateLimitVariants() {
         assertEquals(R.string.error_rate_limited, ErrorMessages.map("Rate limit exceeded, retry after 30s"))
