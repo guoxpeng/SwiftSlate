@@ -1,0 +1,4 @@
+- fix(ci): clear the lint errors that were failing the cn-zh pipeline
+- feat: rename the WeChat-compatible build to "SwiftSlate 微信版"
+- fix(keys): self-heal invalidated Keystore keys, map Google region blocks to a clear message
+- docs: trim upstream content, highlight fork features, add no-root scope notes
