@@ -173,8 +173,15 @@ class AssistantService : AccessibilityService() {
         try {
             val cls = node.className?.toString() ?: "?"
             val isEdit = cls.contains("EditText") || node.isEditable
+            // isImportantForAccessibility is API 24+; the dump is diagnostic-only, so fall back
+            // to "?" on older devices instead of crashing or tripping lint NewApi.
+            val important = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                node.isImportantForAccessibility
+            } else {
+                "?"
+            }
             if (isEdit || node.isFocused || depth < 2) {
-                Log.e(DIAG_TAG, "node[$depth] cls=$cls editable=${node.isEditable} imp=${node.isImportantForAccessibility} foc=${node.isFocused} text=${node.text} id=${node.viewIdResourceName}")
+                Log.e(DIAG_TAG, "node[$depth] cls=$cls editable=${node.isEditable} imp=$important foc=${node.isFocused} text=${node.text} id=${node.viewIdResourceName}")
             }
             for (i in 0 until node.childCount) {
                 try {
