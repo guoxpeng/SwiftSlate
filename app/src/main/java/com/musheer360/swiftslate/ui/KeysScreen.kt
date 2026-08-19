@@ -71,6 +71,7 @@ fun KeysScreen(keyManager: KeyManager, prefs: SharedPreferences) {
     val customEndpointRequiredMsg = stringResource(R.string.keys_custom_endpoint_required)
     val signinRequiredMsg = stringResource(R.string.error_provider_auth_required)
     val endpointNeedsV1Msg = stringResource(R.string.keys_endpoint_needs_v1)
+    val regionBlockedMsg = stringResource(R.string.error_region_blocked)
 
     Column(
         modifier = Modifier
@@ -161,6 +162,7 @@ fun KeysScreen(keyManager: KeyManager, prefs: SharedPreferences) {
                                 testResult = when {
                                     raw.contains(ApiClientUtils.SIGNIN_REQUIRED_MARKER) -> signinRequiredMsg
                                     raw.contains(ApiClientUtils.NEEDS_V1_MARKER) -> endpointNeedsV1Msg
+                                    ApiClientUtils.isRegionBlockedMessage(raw) -> regionBlockedMsg
                                     else -> ApiClientUtils.redactSecrets(raw).ifEmpty { validationFailedMsg }
                                 }
                                 testSuccess = false

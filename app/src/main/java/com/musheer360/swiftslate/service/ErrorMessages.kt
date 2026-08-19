@@ -2,6 +2,7 @@ package com.musheer360.swiftslate.service
 
 import androidx.annotation.StringRes
 import com.musheer360.swiftslate.R
+import com.musheer360.swiftslate.api.ApiClientUtils
 import java.util.Locale
 
 /**
@@ -14,6 +15,11 @@ object ErrorMessages {
         if (raw.isBlank()) return R.string.error_bad_request
         val lower = raw.lowercase(Locale.ROOT)
         return when {
+            // Google's geo/network block ("Access denied. Please check your network settings.")
+            // is a region/network problem, not a key/model permission problem — match it before
+            // the generic permission_denied branch.
+            ApiClientUtils.isRegionBlockedMessage(raw) ->
+                R.string.error_region_blocked
             lower.contains("permission_denied") || lower.contains("permission denied") ->
                 R.string.error_no_model_access
             lower.contains("invalid api key") || lower.contains("api key not valid") || lower.contains("api_key_invalid") ||
