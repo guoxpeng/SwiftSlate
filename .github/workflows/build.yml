@@ -7,7 +7,7 @@ on:
   # behind (delete the orphan tag first, then dispatch).
   workflow_dispatch:
   push:
-    branches: [master]
+    branches: [cn-zh]
     # Deliberately excludes '.github/workflows/**': the pipeline cuts a release
     # on every matching push, and a CI-only commit must not burn a version
     # number for zero app changes. Workflow changes made via PR still get
@@ -20,11 +20,11 @@ on:
       - 'gradle.properties'
     tags: ['v*']
   # Contributor pull requests previously ran no CI at all: the workflow only
-  # triggered on pushes to master, so #104 (50 locale files) was merged without
+  # triggered on pushes to cn-zh, so #104 (50 locale files) was merged without
   # lint or tests ever seeing it. Only lint and test run here — build and release
   # need signing secrets, which are not exposed to pull requests.
   pull_request:
-    branches: [master]
+    branches: [cn-zh]
     paths:
       - 'app/**'
       - 'build.gradle.kts'
@@ -209,7 +209,7 @@ jobs:
           retention-days: 14
 
   build:
-    name: Build Signed APK
+    name: Build Preview APK
     needs: [version, lint, test, tag]
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -241,20 +241,12 @@ jobs:
           # influence what a later release build compiles against.
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
-      - name: Decode signing keystore
-        shell: bash
-        run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > ${{ github.workspace }}/release.keystore
-          chmod 600 ${{ github.workspace }}/release.keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-
-      - name: Build Release APK
+      - name: Build Preview APK
         shell: bash
         run: |
           result=1
           for i in 1 2 3; do
-            ./gradlew assembleRelease --parallel --build-cache --no-daemon --configuration-cache-problems=warn --stacktrace \
+            ./gradlew assemblePreview --parallel --build-cache --no-daemon --configuration-cache-problems=warn --stacktrace \
               -PversionCode="$VERSION_CODE" \
               -PversionName="$VERSION_NAME" && { result=0; break; }
             echo "::warning::Build attempt $i failed, retrying..."
@@ -266,20 +258,11 @@ jobs:
           # before bash sees it, so a value containing shell metacharacters would be executed.
           VERSION_CODE: ${{ needs.version.outputs.version_code }}
           VERSION_NAME: ${{ needs.version.outputs.version_name }}
-          KEYSTORE_FILE: ${{ github.workspace }}/release.keystore
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-
-      - name: Cleanup keystore
-        if: always()
-        shell: bash
-        run: rm -f ${{ github.workspace }}/release.keystore
 
       - name: Verify APK and log size
         shell: bash
         run: |
-          APK_PATH="app/build/outputs/apk/release/app-release.apk"
+          APK_PATH="app/build/outputs/apk/preview/app-preview.apk"
           if [ ! -f "$APK_PATH" ]; then
             echo "::error::APK not found at $APK_PATH"
             exit 1
@@ -297,19 +280,19 @@ jobs:
         shell: bash
         run: |
           BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)
-          ${BUILD_TOOLS}apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
+          ${BUILD_TOOLS}apksigner verify --print-certs app/build/outputs/apk/preview/app-preview.apk
 
       - name: Rename APK
         shell: bash
         env:
           TAG: ${{ needs.version.outputs.tag }}
-        run: mv app/build/outputs/apk/release/app-release.apk "app/build/outputs/apk/release/SwiftSlate-${TAG}.apk"
+        run: mv app/build/outputs/apk/preview/app-preview.apk "app/build/outputs/apk/preview/SwiftSlate-${TAG}.apk"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: SwiftSlate-${{ needs.version.outputs.tag }}
-          path: app/build/outputs/apk/release/SwiftSlate-*.apk
+          path: app/build/outputs/apk/preview/SwiftSlate-*.apk
           retention-days: 90
 
   tag:
@@ -322,9 +305,9 @@ jobs:
       contents: write
     steps:
       # Defence in depth. The job-level `if` already restricts this to push/manual events, but
-      # this job creates tags and pushes to master — if someone later loosens that condition, a
+      # this job creates tags and pushes to cn-zh — if someone later loosens that condition, a
       # pull request must fail loudly here rather than cut a release.
-      - name: Guard — releases only from a master push
+      - name: Guard — releases only from a cn-zh push
         shell: bash
         run: |
           if [ "$GITHUB_EVENT_NAME" != "push" ] && [ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ]; then
@@ -332,7 +315,7 @@ jobs:
             exit 1
           fi
           case "$GITHUB_REF" in
-            refs/heads/master|refs/tags/v*) ;;
+            refs/heads/cn-zh|refs/tags/v*) ;;
             *) echo "::error::Refusing to release from ref '$GITHUB_REF'."; exit 1 ;;
           esac
           echo "Releasing from $GITHUB_REF"
@@ -394,7 +377,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "docs(fastlane): changelog for ${TAG} [skip ci]"
           # Fail loudly rather than tagging a commit that never reached origin. The next
-          # push to master retries cleanly because no tag was created.
+          # push to cn-zh retries cleanly because no tag was created.
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
       # Tag the commit we are actually about to build, whichever one that is (the changelog
@@ -453,7 +436,7 @@ jobs:
           files: |
             artifacts/SwiftSlate-*.apk
             artifacts/versionCode.txt
-          name: SwiftSlate ${{ needs.version.outputs.tag }}
+          name: SwiftSlate 微信版 ${{ needs.version.outputs.tag }}
           body_path: /tmp/changelog.md
           draft: false
           prerelease: false
@@ -523,7 +506,7 @@ jobs:
             echo "### Preview APK ready"
             echo
             echo "Installs as a **separate app** (\`com.musheer360.swiftslate.preview\`, shown as"
-            echo "**SwiftSlate Preview**), so it will not touch your stable install, its API keys,"
+            echo "**SwiftSlate 微信版**), so it will not touch your stable install, its API keys,"
             echo "its commands or its accessibility setting."
             echo
             echo "Download it from the **Artifacts** section of this run, then enable it under"
