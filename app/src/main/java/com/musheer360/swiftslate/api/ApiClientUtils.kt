@@ -115,6 +115,18 @@ internal object ApiClientUtils {
      * Ollama's cloud-auth 401s carry a `signin_url` field pointing at the server-side
      * sign-in flow. Returns it (or null) so callers can label the failure accurately.
      */
+    /**
+     * Google (and a few other providers) answers a geo/network block with a 403 whose message
+     * reads "Access denied. Please check your network settings." — a *network/region* problem,
+     * not a key or model permission problem. Callers show a "switch provider / use a proxy"
+     * message instead of the raw English text, which is meaningless to most users.
+     */
+    fun isRegionBlockedMessage(message: String): Boolean {
+        val lower = message.lowercase(Locale.ROOT)
+        return lower.contains("access denied") &&
+            (lower.contains("network") || lower.contains("region"))
+    }
+
     fun extractSigninUrl(errorBody: String): String? {
         if (errorBody.isBlank()) return null
         return try {
