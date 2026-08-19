@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Preview-only overrides for Simplified Chinese. The main values-zh still names the stable
+  build "SwiftSlate"; this source set renames the WeChat-compatible build on Chinese devices.
+-->
+<resources>
+    <string name="app_name">SwiftSlate 微信版</string>
+    <string name="accessibility_service_label">SwiftSlate 微信版</string>
+</resources>

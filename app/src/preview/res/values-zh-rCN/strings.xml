@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Preview-only overrides for Simplified Chinese (China region). Mirrors values-zh so the
+  WeChat-compatible build shows its own name on zh-rCN devices too.
+-->
+<resources>
+    <string name="app_name">SwiftSlate 微信版</string>
+    <string name="accessibility_service_label">SwiftSlate 微信版</string>
+</resources>

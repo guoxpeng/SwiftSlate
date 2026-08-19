@@ -2,12 +2,11 @@
 <!--
   Overrides for the `preview` build type only, so a side-by-side preview install is
   distinguishable from the stable one on the launcher and in the accessibility settings list.
-  Deliberately English-only: preview builds are for testing a change, and the strings that
-  matter for translation coverage all live in the main source set.
+  This fork's distributed build is the WeChat-compatible one, so it is named accordingly.
 -->
 <resources>
-    <string name="app_name">SwiftSlate Preview</string>
-    <string name="accessibility_service_label">SwiftSlate Preview</string>
+    <string name="app_name">SwiftSlate 微信版</string>
+    <string name="accessibility_service_label">SwiftSlate 微信版</string>
     <string name="fake_whitelist_google_label">SwiftSlate 微信适配（备选）</string>
     <string name="fake_whitelist_dianming_label">SwiftSlate 微信适配</string>
 </resources>
