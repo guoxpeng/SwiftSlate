@@ -339,9 +339,12 @@ jobs:
             RANGE="${PREV_TAG}..HEAD"
           fi
           # Generate changelog from commit messages, skip merge commits and CI noise
+          # `|| true` keeps `set -e`/`pipefail` from failing the step when the range is
+          # empty (e.g. a manual re-dispatch after HEAD was already released) — grep exits 1
+          # on empty input, and the fallback below turns that into a maintenance note.
           CHANGELOG=$(git log "$RANGE" --pretty=format:"- %s" --no-merges \
             | grep -iv "^- \(ci:\|merge\|changelog\|bump\|docs(fastlane)\)" \
-            | head -20)
+            | head -20 || true)
           if [ -z "$CHANGELOG" ]; then
             CHANGELOG="- Maintenance and bug fixes"
           fi
