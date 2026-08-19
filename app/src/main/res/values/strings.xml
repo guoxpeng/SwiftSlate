@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">SwiftSlate</string>
     <string name="accessibility_service_label">SwiftSlate Assistant</string>
     <string name="accessibility_service_desc">Provides system-wide AI text replacements when trigger commands are typed.</string>
@@ -120,7 +120,7 @@
 
     <!-- Runtime error messages (accessibility service) -->
     <string name="error_no_model_access">Your API key doesn\'t have access to this model.</string>
-    <string name="error_region_blocked">Access denied. This provider may be blocked in your region or on your network. Try another network, or switch to a custom OpenAI-compatible provider in Settings.</string>
+    <string name="error_region_blocked" tools:ignore="MissingTranslation">Access denied. This provider may be blocked in your region or on your network. Try another network, or switch to a custom OpenAI-compatible provider in Settings.</string>
     <string name="error_invalid_key">Invalid API key. Please check your key in Settings.</string>
     <string name="error_invalid_key_with_hint">Invalid API key (%1$s). Please check your keys in Settings.</string>
     <string name="error_provider_auth_required">Your endpoint rejected the request. If it is a cloud-based server, sign in on the server itself (e.g. `ollama signin`).</string>
@@ -154,11 +154,11 @@
     <string name="dashboard_service_killed_dismiss">Dismiss</string>
 
     <!-- WeChat compatibility (preview-only hint) -->
-    <string name="dashboard_wechat_hint_title">WeChat compatibility</string>
-    <string name="dashboard_wechat_hint_body">WeChat blocks text replacement unless the companion compatibility service is also on. Enable it alongside SwiftSlate Assistant.</string>
-    <string name="dashboard_wechat_hint_action">Open Accessibility Settings</string>
+    <string name="dashboard_wechat_hint_title" tools:ignore="MissingTranslation">WeChat compatibility</string>
+    <string name="dashboard_wechat_hint_body" tools:ignore="MissingTranslation">WeChat blocks text replacement unless the companion compatibility service is also on. Enable it alongside SwiftSlate Assistant.</string>
+    <string name="dashboard_wechat_hint_action" tools:ignore="MissingTranslation">Open Accessibility Settings</string>
 
     <!-- Settings: accessibility -->
-    <string name="settings_accessibility_title">Accessibility</string>
-    <string name="settings_accessibility_open">Open Settings</string>
+    <string name="settings_accessibility_title" tools:ignore="MissingTranslation">Accessibility</string>
+    <string name="settings_accessibility_open" tools:ignore="MissingTranslation">Open Settings</string>
 </resources>
