@@ -439,7 +439,7 @@ jobs:
           files: |
             artifacts/SwiftSlate-*.apk
             artifacts/versionCode.txt
-          name: SwiftSlate 微信版 ${{ needs.version.outputs.tag }}
+          name: SwiftSlate 微信适配 ${{ needs.version.outputs.tag }}
           body_path: /tmp/changelog.md
           draft: false
           prerelease: false
@@ -509,7 +509,7 @@ jobs:
             echo "### Preview APK ready"
             echo
             echo "Installs as a **separate app** (\`com.musheer360.swiftslate.preview\`, shown as"
-            echo "**SwiftSlate 微信版**), so it will not touch your stable install, its API keys,"
+            echo "**SwiftSlate 微信适配**), so it will not touch your stable install, its API keys,"
             echo "its commands or its accessibility setting."
             echo
             echo "Download it from the **Artifacts** section of this run, then enable it under"

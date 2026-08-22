@@ -4,6 +4,6 @@
   build "SwiftSlate"; this source set renames the WeChat-compatible build on Chinese devices.
 -->
 <resources>
-    <string name="app_name">SwiftSlate 微信版</string>
-    <string name="accessibility_service_label">SwiftSlate 微信版</string>
+    <string name="app_name">SwiftSlate 微信适配</string>
+    <string name="accessibility_service_label">SwiftSlate 微信适配</string>
 </resources>

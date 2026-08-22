@@ -4,6 +4,6 @@
   WeChat-compatible build shows its own name on zh-rCN devices too.
 -->
 <resources>
-    <string name="app_name">SwiftSlate 微信版</string>
-    <string name="accessibility_service_label">SwiftSlate 微信版</string>
+    <string name="app_name">SwiftSlate 微信适配</string>
+    <string name="accessibility_service_label">SwiftSlate 微信适配</string>
 </resources>

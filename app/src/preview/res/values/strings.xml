@@ -5,8 +5,8 @@
   This fork's distributed build is the WeChat-compatible one, so it is named accordingly.
 -->
 <resources>
-    <string name="app_name">SwiftSlate 微信版</string>
-    <string name="accessibility_service_label">SwiftSlate 微信版</string>
+    <string name="app_name">SwiftSlate 微信适配</string>
+    <string name="accessibility_service_label">SwiftSlate 微信适配</string>
     <string name="fake_whitelist_google_label">SwiftSlate 微信适配（备选）</string>
     <string name="fake_whitelist_dianming_label">SwiftSlate 微信适配</string>
 </resources>
