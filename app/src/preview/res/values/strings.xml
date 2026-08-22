@@ -6,7 +6,7 @@
 -->
 <resources>
     <string name="app_name">SwiftSlate 微信适配</string>
-    <string name="accessibility_service_label">SwiftSlate 微信适配</string>
+    <string name="accessibility_service_label">SwiftSlate（主程序）</string>
     <string name="fake_whitelist_google_label">SwiftSlate 微信适配（备选）</string>
     <string name="fake_whitelist_dianming_label">SwiftSlate 微信适配</string>
 </resources>
