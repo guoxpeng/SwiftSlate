@@ -467,7 +467,7 @@ class AssistantService : AccessibilityService() {
         } catch (e: Exception) {
             Log.w(TAG, "focused-node fallback failed", e)
             root.safeRecycle()
-            null
+            return null
         }
     }
 
