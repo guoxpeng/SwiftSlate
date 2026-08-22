@@ -276,6 +276,31 @@ jobs:
             exit 1
           fi
 
+      - name: Sign with fixed release keystore
+        shell: bash
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${KEYSTORE_B64:-}" ]; then
+            echo "::notice::No signing keystore configured; keeping the debug-signed APK."
+            exit 0
+          fi
+          APK_PATH="app/build/outputs/apk/preview/app-preview.apk"
+          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/swiftslate.p12"
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)
+          "${BUILD_TOOLS}apksigner" sign \
+            --ks "$RUNNER_TEMP/swiftslate.p12" --ks-type PKCS12 \
+            --ks-pass "pass:${KEYSTORE_PASSWORD}" \
+            --ks-key-alias "${KEY_ALIAS}" \
+            --key-pass "pass:${KEY_PASSWORD}" \
+            --out "$RUNNER_TEMP/app-signed.apk" "$APK_PATH"
+          mv "$RUNNER_TEMP/app-signed.apk" "$APK_PATH"
+          echo "::notice::APK re-signed with the fixed release keystore."
+
       - name: Verify APK signature
         shell: bash
         run: |
