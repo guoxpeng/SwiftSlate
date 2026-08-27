@@ -1,0 +1,2 @@
+- fix(lint): mark new string non-translated like error_region_blocked
+- fix(api): adapt model fetching for Chinese OpenAI-compatible providers
