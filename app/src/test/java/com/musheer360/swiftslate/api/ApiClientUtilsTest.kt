@@ -203,6 +203,26 @@ class ApiClientUtilsTest {
     }
 
     @Test
+    fun parseModelIds_readsStringArrayDataShape() {
+        assertEquals(
+            listOf("deepseek-chat", "deepseek-reasoner"),
+            ApiClientUtils.parseModelIds("""{"data":["deepseek-chat","deepseek-reasoner"]}""")
+        )
+    }
+
+    @Test
+    fun parseModelIds_readsModelListShape() {
+        assertEquals(
+            listOf("glm-4.5", "glm-4.5-air"),
+            ApiClientUtils.parseModelIds("""{"model_list":["glm-4.5","glm-4.5-air"]}""")
+        )
+        assertEquals(
+            listOf("qwen-max", "qwen-plus"),
+            ApiClientUtils.parseModelIds("""{"modelList":[{"id":"qwen-max"},{"id":"qwen-plus"}]}""")
+        )
+    }
+
+    @Test
     fun parseModelIds_readsVllmModelFieldShape() {
         assertEquals(
             listOf("meta-llama/Meta-Llama-3-8B-Instruct"),

@@ -7,6 +7,7 @@ import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.util.Locale
+import org.json.JSONArray
 import org.json.JSONObject
 
 sealed interface ApiError {
@@ -149,6 +150,9 @@ internal object ApiClientUtils {
      */
     const val NEEDS_V1_MARKER = "endpoint_needs_v1"
 
+    /** Marker prefix when a Custom-provider models fetch failed authentication (missing/invalid key). */
+    const val CUSTOM_KEY_INVALID_MARKER = "custom_key_invalid"
+
     /**
      * Extracts model ids from a model-list response body, tolerating the shapes served by
      * local LLM servers:
@@ -165,29 +169,31 @@ internal object ApiClientUtils {
         return try {
             val root = JSONObject(json)
             val out = LinkedHashSet<String>()
-            root.optJSONArray("data")?.let { arr ->
-                for (i in 0 until arr.length()) {
-                    val obj = arr.optJSONObject(i) ?: continue
-                    listOf(obj.optString("id"), obj.optString("name"), obj.optString("model"))
-                        .firstOrNull { it.isNotBlank() }
-                        ?.trim()?.let { out.add(it) }
-                }
-            }
-            root.optJSONArray("models")?.let { arr ->
-                for (i in 0 until arr.length()) {
-                    val obj = arr.optJSONObject(i)
-                    if (obj != null) {
-                        listOf(obj.optString("name"), obj.optString("id"), obj.optString("model"))
-                            .firstOrNull { it.isNotBlank() }
-                            ?.trim()?.let { out.add(it) }
-                    } else {
-                        arr.optString(i).takeIf { it.isNotBlank() }?.trim()?.let { out.add(it) }
-                    }
-                }
-            }
+            // OpenAI style {"data":[...]} — elements may be objects ({id|name|model}) or plain
+            // ids (some Chinese OpenAI-compatible gateways return {"data":["a","b"]}).
+            root.optJSONArray("data")?.let { addModelIds(it, out) }
+            // Ollama native {"models":[{"name":...}]} (GET /api/tags).
+            root.optJSONArray("models")?.let { addModelIds(it, out) }
+            // Chinese OpenAI-compatible gateways that list models under "model_list"/"modelList".
+            root.optJSONArray("model_list")?.let { addModelIds(it, out) }
+            root.optJSONArray("modelList")?.let { addModelIds(it, out) }
             out.toList()
         } catch (_: Exception) {
             emptyList()
+        }
+    }
+
+    /** Adds object ({id|name|model}) or plain-string entries from [arr] to [out], first-seen order. */
+    private fun addModelIds(arr: JSONArray, out: LinkedHashSet<String>) {
+        for (i in 0 until arr.length()) {
+            val obj = arr.optJSONObject(i)
+            if (obj != null) {
+                listOf(obj.optString("id"), obj.optString("name"), obj.optString("model"))
+                    .firstOrNull { it.isNotBlank() }
+                    ?.trim()?.let { out.add(it) }
+            } else {
+                arr.optString(i).takeIf { it.isNotBlank() }?.trim()?.let { out.add(it) }
+            }
         }
     }
 

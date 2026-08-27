@@ -131,6 +131,12 @@ class OpenAICompatibleClient {
         }
         val baseUrl = endpoint.trimEnd('/')
         var lastDetail: String? = null
+        // First auth rejection (401/403) seen. Unlike a plain 404 it is not a "path not
+        // served" signal: the server exists but rejected the credentials. We keep probing —
+        // some OpenAI-compatible gateways (notably Chinese providers such as Tencent Hunyuan)
+        // reject one models path with a 401 while serving another with a Bearer key — and only
+        // surface the auth error if no path yields a list.
+        var authFailed: String? = null
         // Set on the first 2xx, whatever the body: a server that answered is reachable even
         // when it lists no models, so "No models found" must win over a 404 seen elsewhere.
         var reachable = false
@@ -148,15 +154,8 @@ class OpenAICompatibleClient {
                     // Reachable but empty at this path — try the next one.
                 }
                 probe.code == 401 || probe.code == 403 -> {
-                    val apiMessage = ApiClientUtils.extractApiErrorMessage(probe.body)
-                    val signinUrl = ApiClientUtils.extractSigninUrl(probe.body)
-                    val detail = when {
-                        signinUrl != null || apiMessage.contains("not currently signed in", ignoreCase = true) ->
-                            "${ApiClientUtils.SIGNIN_REQUIRED_MARKER}: ${apiMessage.ifEmpty { "server sign-in required" }}"
-                        apiMessage.isNotEmpty() -> apiMessage
-                        else -> "Invalid API key"
-                    }
-                    return@withContext Result.failure(Exception(detail))
+                    if (authFailed == null) authFailed = authFailureDetail(probe.body)
+                    lastDetail = authFailed
                 }
                 else -> {
                     // 404/405/5xx — this path is not served here; remember the detail and
@@ -166,8 +165,21 @@ class OpenAICompatibleClient {
                 }
             }
         }
-        if (lastDetail != null && !reachable) Result.failure(Exception(lastDetail))
+        // Prefer the actionable auth error when the server never listed models.
+        if (authFailed != null && !reachable) Result.failure(Exception(authFailed))
+        else if (lastDetail != null && !reachable) Result.failure(Exception(lastDetail))
         else Result.success(emptyList())
+    }
+
+    /** Builds an actionable detail for a 401/403 models-fetch rejection. */
+    private fun authFailureDetail(body: String): String {
+        val apiMessage = ApiClientUtils.extractApiErrorMessage(body)
+        val signinUrl = ApiClientUtils.extractSigninUrl(body)
+        return when {
+            signinUrl != null || apiMessage.contains("not currently signed in", ignoreCase = true) ->
+                "${ApiClientUtils.SIGNIN_REQUIRED_MARKER}: ${apiMessage.ifEmpty { "server sign-in required" }}"
+            else -> "${ApiClientUtils.CUSTOM_KEY_INVALID_MARKER}: ${apiMessage.ifEmpty { "Invalid API key" }}"
+        }
     }
 
     private data class Probe(val code: Int, val body: String)

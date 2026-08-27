@@ -94,6 +94,7 @@ fun SettingsScreen(commandManager: CommandManager, prefs: SharedPreferences, key
     val modelsEmptyMsg = stringResource(R.string.settings_fetch_models_empty)
     val modelsFailedMsg = stringResource(R.string.settings_fetch_models_failed)
     val signinRequiredMsg = stringResource(R.string.error_provider_auth_required)
+    val keyInvalidMsg = stringResource(R.string.settings_fetch_models_key_invalid)
 
     // Registered keys are decrypted through the Keystore — load off the main thread, as
     // KeysScreen does. The first key is sent as Bearer when fetching models; keyless local
@@ -451,10 +452,10 @@ fun SettingsScreen(commandManager: CommandManager, prefs: SharedPreferences, key
                                 }.onFailure { e ->
                                     customModels = emptyList()
                                     val raw = e.message ?: ""
-                                    fetchMessage = if (raw.contains(ApiClientUtils.SIGNIN_REQUIRED_MARKER)) {
-                                        signinRequiredMsg
-                                    } else {
-                                        modelsFailedMsg
+                                    fetchMessage = when {
+                                        raw.contains(ApiClientUtils.SIGNIN_REQUIRED_MARKER) -> signinRequiredMsg
+                                        raw.contains(ApiClientUtils.CUSTOM_KEY_INVALID_MARKER) -> keyInvalidMsg
+                                        else -> modelsFailedMsg
                                     }
                                     fetchSuccess = false
                                 }
