@@ -1,0 +1,2 @@
+- fix: point update checks to SwiftSlate-cn
+- docs: update links for SwiftSlate-cn rename
