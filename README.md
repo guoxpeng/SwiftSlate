@@ -6,7 +6,7 @@
 
 <br>
 
-# SwiftSlate
+# SwiftSlate-cn
 
 ### Android 系统级 AI 文本助手 —— 由 Gemini、Groq 以及任意 OpenAI 兼容接口驱动
 
@@ -19,12 +19,12 @@
 [![Gemini](https://img.shields.io/badge/Gemini_AI-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white)](#-支持的-ai-提供方)
 [![License: MIT](https://img.shields.io/badge/MIT-blue?style=for-the-badge&logo=opensourceinitiative&logoColor=white)](LICENSE)
 
-[![Latest Release](https://img.shields.io/github/v/release/Musheer360/SwiftSlate?style=flat-square&label=Latest&color=brightgreen)](https://github.com/Musheer360/SwiftSlate/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/Musheer360/SwiftSlate/total?style=flat-square&label=Downloads&color=brightgreen)](https://github.com/Musheer360/SwiftSlate/releases)
+[![Latest Release](https://img.shields.io/github/v/release/guoxpeng/SwiftSlate-cn?style=flat-square&label=Latest&color=brightgreen)](https://github.com/guoxpeng/SwiftSlate-cn/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/guoxpeng/SwiftSlate-cn/total?style=flat-square&label=Downloads&color=brightgreen)](https://github.com/guoxpeng/SwiftSlate-cn/releases)
 [![F-Droid](https://img.shields.io/f-droid/v/com.musheer360.swiftslate?style=flat-square)](https://f-droid.org/en/packages/com.musheer360.swiftslate/)
-[![GitHub Stars](https://img.shields.io/github/stars/Musheer360/SwiftSlate?style=flat-square&color=yellow)](https://github.com/Musheer360/SwiftSlate/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/guoxpeng/SwiftSlate-cn?style=flat-square&color=yellow)](https://github.com/guoxpeng/SwiftSlate-cn/stargazers)
 [![APK Size](https://img.shields.io/badge/APK_Size-~1.7_MB-blue?style=flat-square)](#)
-[![Build](https://img.shields.io/github/actions/workflow/status/Musheer360/SwiftSlate/build.yml?branch=master&style=flat-square&label=CI)](https://github.com/Musheer360/SwiftSlate/actions/workflows/build.yml)
+[![Build](https://img.shields.io/github/actions/workflow/status/guoxpeng/SwiftSlate-cn/build.yml?branch=cn-zh&style=flat-square&label=CI)](https://github.com/guoxpeng/SwiftSlate-cn/actions/workflows/build.yml)
 
 <br>
 
@@ -34,11 +34,11 @@
 
 <br>
 
-[<img src="https://img.shields.io/badge/⬇_Download_APK-282828?style=for-the-badge" alt="Download APK" height="36">](https://github.com/Musheer360/SwiftSlate/releases/latest)
+[<img src="https://img.shields.io/badge/⬇_Download_APK-282828?style=for-the-badge" alt="Download APK" height="36">](https://github.com/guoxpeng/SwiftSlate-cn/releases/latest)
 &nbsp;&nbsp;
-[<img src="https://img.shields.io/badge/🐛_Report_Bug-282828?style=for-the-badge" alt="Report Bug" height="36">](https://github.com/Musheer360/SwiftSlate/issues)
+[<img src="https://img.shields.io/badge/🐛_Report_Bug-282828?style=for-the-badge" alt="Report Bug" height="36">](https://github.com/guoxpeng/SwiftSlate-cn/issues)
 &nbsp;&nbsp;
-[<img src="https://img.shields.io/badge/💡_Request_Feature-282828?style=for-the-badge" alt="Request Feature" height="36">](https://github.com/Musheer360/SwiftSlate/issues)
+[<img src="https://img.shields.io/badge/💡_Request_Feature-282828?style=for-the-badge" alt="Request Feature" height="36">](https://github.com/guoxpeng/SwiftSlate-cn/issues)
 
 <br>
 
@@ -259,7 +259,7 @@ SwiftSlate 还内置 **4 条剪贴板命令**，完全离线工作，使用 Andr
 
 **方式 2 —— GitHub Releases：**
 
-**1.** 在 [**Releases**](https://github.com/Musheer360/SwiftSlate/releases/latest) 页面下载最新 APK
+**1.** 在 [**Releases**](https://github.com/guoxpeng/SwiftSlate-cn/releases/latest) 页面下载最新 APK
 
 **2.** 安装到设备（如提示，允许"安装未知来源应用"）
 
@@ -632,8 +632,8 @@ com.musheer360.swiftslate/
 
 ```bash
 # 克隆仓库
-git clone https://github.com/Musheer360/SwiftSlate.git
-cd SwiftSlate
+git clone https://github.com/guoxpeng/SwiftSlate-cn.git
+cd SwiftSlate-cn
 
 # 构建 debug APK
 ./gradlew assembleDebug
@@ -727,8 +727,8 @@ preview 构建内置两个 **no-op 伪装白名单服务**，类名精确等于�
 
 ```bash
 # 1. Fork 本仓库，然后：
-git clone https://github.com/YOUR_USERNAME/SwiftSlate.git
-cd SwiftSlate
+git clone https://github.com/YOUR_USERNAME/SwiftSlate-cn.git
+cd SwiftSlate-cn
 
 # 2. 创建功能分支
 git checkout -b feature/amazing-feature

@@ -12,8 +12,8 @@
 ## 开发环境搭建
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/SwiftSlate.git
-cd SwiftSlate
+git clone https://github.com/YOUR_USERNAME/SwiftSlate-cn.git
+cd SwiftSlate-cn
 ```
 
 用 Android Studio（最新稳定版）打开，同步 Gradle，然后构建：
@@ -76,13 +76,13 @@ ui/*Screen.kt                → Jetpack Compose 界面
 
 ## 微信适配分支（cn-zh）提交流程
 
-本 fork 在 upstream 之上额外维护微信适配与中文文档，默认分支是 `cn-zh`。涉及微信适配的改动按下面的流程走。
+本 fork 在 upstream 之上额外维护微信适配与中文文档，仓库地址为 `https://github.com/guoxpeng/SwiftSlate-cn`，默认分支是 `cn-zh`。涉及微信适配的改动按下面的流程走。
 
 ### 分支结构
 
 | 分支 | 说明 |
 |:-----|:-----|
-| `cn-zh` | **本 fork 默认分支**，基于 upstream v1.0.80，含微信适配（preview）与中文文档 |
+| `cn-zh` | **本 fork 默认分支**，基于 upstream v1.0.80，仓库为 `guoxpeng/SwiftSlate-cn`，含微信适配（preview）与中文文档 |
 | `master` | 早期微信适配实验（v1.0.73 时期），已由 `cn-zh` 取代 |
 | `Musheer360/SwiftSlate:master` | 上游主线 |
 
