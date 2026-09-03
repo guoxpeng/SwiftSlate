@@ -30,9 +30,9 @@ class UpdateCheckWorker(
         private const val PREFS_NAME = "update_check"
         private const val KEY_LAST_NOTIFIED_VERSION = "last_notified_version"
         private const val GITHUB_API_URL =
-            "https://api.github.com/repos/Musheer360/SwiftSlate/releases/latest"
+            "https://api.github.com/repos/guoxpeng/SwiftSlate-cn/releases/latest"
         private const val RELEASES_URL =
-            "https://github.com/Musheer360/SwiftSlate/releases/latest"
+            "https://github.com/guoxpeng/SwiftSlate-cn/releases/latest"
 
         /**
          * Compares dot-separated versions (e.g. "1.0.50" > "1.0.49").
