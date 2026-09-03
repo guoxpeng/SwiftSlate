@@ -45,7 +45,7 @@
 </div>
 
 > [!IMPORTANT]
-> **本仓库是个人 CN 汉化 / 微信适配分支**（默认分支 `cn-zh`），基于 upstream **v1.0.76** 并额外提供：
+> **本仓库是个人 CN 汉化 / 微信适配分支**（默认分支 `cn-zh`），基于 upstream **v1.0.80** 并额外提供：
 > - **💬 微信聊天输入框适配** —— 通过 preview 构建内置的「伪装白名单」无障碍服务绕过微信的反无障碍机制，让 `?fix` 等命令在微信里也能用（详见[微信适配](#-微信适配本分支新增)和 [WECHAT_COMPAT.md](WECHAT_COMPAT.md)）
 > - **🇨🇳 完整简体中文翻译**（`values-zh` / `values-zh-rCN`，134/134 键全覆盖）
 > - **🔍 SwiftSlateDiag 真机诊断日志**（`adb logcat -s SwiftSlateDiag:E`）
@@ -669,11 +669,11 @@ export KEY_PASSWORD=your_key_password
 
 每个 Pull Request 都会构建一个 **preview APK**，可以和稳定版并排安装。
 
-它以独立 App 形式存在 —— applicationId `com.musheer360.swiftslate.preview`，桌面图标显示为 **SwiftSlate Preview** —— 安装它不会替换你的稳定版，也不会碰它的 API 密钥、命令、统计或无障碍设置。两者在 设置 → 无障碍 下显示为两个独立条目，你想测哪个就开哪个。
+它以独立 App 形式存在 —— applicationId `com.musheer360.swiftslate.preview`，桌面图标显示为 **SwiftSlate 微信版** —— 安装它不会替换你的稳定版，也不会碰它的 API 密钥、命令、统计或无障碍设置。两者在 设置 → 无障碍 下显示为两个独立条目，你想测哪个就开哪个。
 
 1. 打开 Pull Request 的 **Checks** 标签页，选择最新的 **Build & Release** 运行记录
 2. 在 **Artifacts** 部分下载 `SwiftSlate-preview-prNNN` 构件
-3. 解压并安装 APK，然后在无障碍设置里启用 **SwiftSlate Preview**
+3. 解压并安装 APK，然后在无障碍设置里启用 **SwiftSlate 微信版**
 4. 用完卸载即可 —— 整个过程不影响你的稳定版安装
 
 preview 构建和 release 一样做了裁剪、不可调试，但用 debug 密钥签名，所以永远不会静默更新你的稳定版。本地构建：

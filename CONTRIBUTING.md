@@ -82,7 +82,7 @@ ui/*Screen.kt                → Jetpack Compose 界面
 
 | 分支 | 说明 |
 |:-----|:-----|
-| `cn-zh` | **本 fork 默认分支**，基于 upstream v1.0.76，含微信适配（preview）与中文文档 |
+| `cn-zh` | **本 fork 默认分支**，基于 upstream v1.0.80，含微信适配（preview）与中文文档 |
 | `master` | 早期微信适配实验（v1.0.73 时期），已由 `cn-zh` 取代 |
 | `Musheer360/SwiftSlate:master` | 上游主线 |
 

@@ -225,7 +225,7 @@ jobs:
 
             [Direct download](${artifactUrl}) · [Run](${runUrl}) · \`${artifact}.zip\` → single \`.apk\`, no folders · expires 14d
 
-            Unzip → installs as **SwiftSlate Preview** (\`com.musheer360.swiftslate.preview\`), separate from stable. Enable in Settings → Accessibility.
+            Unzip → installs as **SwiftSlate 微信版** (\`com.musheer360.swiftslate.preview\`), separate from stable. Enable in Settings → Accessibility.
 
             <!-- preview-apk pr=${pr} run=${runId} sha=${headSha} -->`;
 

@@ -4,7 +4,7 @@
 
 > 适用范围：补丁目前只打包在 `preview` 构建类型中，不影响稳定版。建议上游采用相同的结构（见"上游集成建议"）。
 >
-> 版本：本文档对应 **v1.0.76** 代码库（upstream `master` 的 `cabd098`）。上游已在 #125 中自行采纳 `srcNull` 兜底，本分支现在只额外提供：preview 伪装白名单服务、递归 editable 节点搜索、`SwiftSlateDiag` `Log.e` 诊断、UI 提示（见 §3）。
+> 版本：本文档对应 **v1.0.80** 代码库（upstream `master` 的 `8dd8e9f`）。上游已在 #125 中自行采纳 `srcNull` 兜底，本分支现在只额外提供：preview 伪装白名单服务、递归 editable 节点搜索、`SwiftSlateDiag` `Log.e` 诊断、UI 提示（见 §3）。
 
 ---
 
@@ -63,7 +63,7 @@
 |---|---|
 | `app/build.gradle.kts` | `buildConfigField("String", "WHITELIST_SERVICE", ...)`：在 **`defaultConfig` 中定义为空串**（这样稳定版也能编译 —— 该字段被主源码引用），并在 `preview` buildType 中覆盖为 `"com.dianming.phoneapp.MyAccessibilityService"`。Dashboard 提示据此判断兼容服务是否已启用。 |
 | `app/proguard-rules.pro` | `-keep` 两个 no-op 服务类的 `<init>()` —— **R8 绝不能重命名它们**，FQCN 本身就是功能。（类名必须原样通过混淆。）同时保留 `Log.e`（承载 `SwiftSlateDiag` 诊断；`-assumenosideeffects` 只剥离 v/d/i/w）。 |
-| `gradle.properties` | fork 发布固定版本：`versionName=1.0.76`、`versionCode=227`（可用 `-PversionName`/`-PversionCode` 覆盖）。 |
+| `gradle.properties` | fork 发布固定版本：`versionName=1.0.80`、`versionCode=267`（可用 `-PversionName`/`-PversionCode` 覆盖）。 |
 | `app/src/preview/res/values/strings.xml`（+ `values-zh`、`values-zh-rCN`） | 应用名与无障碍服务名（`app_name` / `accessibility_service_label` = `SwiftSlate 微信版`），以及两个兼容服务的显示名（`SwiftSlate 微信适配` / `SwiftSlate 微信适配（备选）`）。 |
 | `app/src/main/java/.../service/AssistantService.kt` | **(a)** `srcNull` 兜底改进：上游 #125 的兜底用 `root.findFocus(FOCUS_INPUT)`，对 WebView 类编辑器会返回 WebView 容器节点（不可编辑）。本分支改为遍历整棵树寻找**同时满足 editable 且 focused** 的节点（`findFocusedEditableSource` / `findFocusedEditable`），保留上游的节流与崩溃加固。**(b)** 事件链路和 `replaceText` 上的 `Log.e` 诊断输出（`SwiftSlateDiag`）。**(c)** `startWindowDump()` 调试用 dump 循环，**默认禁用**（调用被注释）—— 每 3 秒戳一次微信 delegate 会让 IME 候选栏跳动。 |
 | `app/src/main/java/.../ui/DashboardScreen.kt` | 微信兼容提示卡片：主服务开启但白名单服务关闭时，提示两者必须同时启用（仅 preview 构建；由 `BuildConfig.WHITELIST_SERVICE` 非空控制）。 |
@@ -74,7 +74,7 @@
 
 ## 4. srcNull 兜底（一个真正有用的附带修复）
 
-诊断过程中我们发现，部分 App 会发出 `event.source == null` 的 `TYPE_VIEW_TEXT_CHANGED` 事件（自定义输入管线、WebView 等）。此前 SwiftSlate 遇到就直接放弃。**上游已在 #125 采纳该修复**（v1.0.76）；本分支只做了改进：上游版本调用 `root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)`，对 WebView 类编辑器会返回 WebView *容器*（不可编辑）。本分支改为遍历整棵树找**同时 editable 且 focused** 的节点：当事件不带 source 时，遍历 `rootInActiveWindow` 找聚焦的可编辑节点。
+诊断过程中我们发现，部分 App 会发出 `event.source == null` 的 `TYPE_VIEW_TEXT_CHANGED` 事件（自定义输入管线、WebView 等）。此前 SwiftSlate 遇到就直接放弃。**上游已在 #125 采纳该修复**（v1.0.80）；本分支只做了改进：上游版本调用 `root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)`，对 WebView 类编辑器会返回 WebView *容器*（不可编辑）。本分支改为遍历整棵树找**同时 editable 且 focused** 的节点：当事件不带 source 时，遍历 `rootInActiveWindow` 找聚焦的可编辑节点。
 
 - **适用：** 原生 `EditText` 但事件不带 source 的 App（兜底有效）。
 - **不适用：** WebView 富文本编辑器（如 ColorOS 便签）。其可编辑 HTML 字段是*虚拟*节点，从不通过无障碍子节点层级暴露（`childCount` 为 1 但 `getChild(0)` 返回 null）。这是 WebView 无障碍的固有限制，不是 SwiftSlate 的 bug。
